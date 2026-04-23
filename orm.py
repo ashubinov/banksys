@@ -6,6 +6,7 @@ from models import ClientORM, DepositORM, AccountORM, UserORM, UserRole
 from schemas import UserCreateSchema, DepositAddShema, DepositPatchShema, ClientAddShema, ClientPatchShema, \
     AccountPatchShema, AccountAddShema
 from password import hash_password, verify_password
+from config import settings
 
 class AsyncORM:
     @staticmethod
@@ -28,8 +29,8 @@ class AsyncORM:
     @staticmethod
     async def insert_admin_data(session):
         admin_data = UserCreateSchema(
-            username="first",
-            password="1234",
+            username=settings.admin_first_username,
+            password=settings.admin_first_password,
             role=UserRole.admin,
         )
         await AsyncORM.create_user(session, admin_data)

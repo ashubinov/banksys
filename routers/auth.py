@@ -1,12 +1,8 @@
 from typing import Annotated
 from datetime import timedelta
-from auth_config import (
-    SECRET_KEY, ALGORITHM,
-    create_refresh_token, ACCESS_TOKEN_EXPIRE_MINUTES,
-    REFRESH_TOKEN_EXPIRE_DAYS, create_access_token
-)
+from auth_config import create_refresh_token, create_access_token
+from config import settings
 from role import get_current_user, require_role
-from auth_config import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from orm import AsyncORM
 from fastapi import APIRouter, Depends, HTTPException, status
 from schemas import UserCreateSchema, UserOutSchema, Token
@@ -33,11 +29,11 @@ async def login_for_access_token(
 
     access_token = create_access_token(
         data={"sub": user.user_name, "type": "access"},
-        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expires_delta=timedelta(minutes=settings.access_token_expire_minutes)
     )
     refresh_token = create_refresh_token(
         data={"sub": user.user_name},
-        expires_delta=timedelta(minutes=REFRESH_TOKEN_EXPIRE_DAYS)
+        expires_delta=timedelta(minutes=settings.refresh_token_expire_days)
     )
     return Token(access_token=access_token, token_type="bearer")
 

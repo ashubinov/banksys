@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordBearer
 from database import SessionDep
 from orm import AsyncORM
 from models import UserORM, UserRole
-from auth_config import SECRET_KEY, ALGORITHM
+from config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="oauth/token")
 
@@ -20,7 +20,7 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
         username = payload.get("sub")
         token_type = payload.get("type")
         if username is None or token_type != "access":

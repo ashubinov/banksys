@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 from contextlib import asynccontextmanager
 from starlette.responses import FileResponse
 from orm import AsyncORM
