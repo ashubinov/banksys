@@ -73,3 +73,10 @@ class AccountPatchShema(BaseModel):
     deposit_id: int | None = None
     client_id: int | None = None
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: str

@@ -22,4 +22,4 @@ app.include_router(account.router)
 
 @app.get("/")
 async def read_root():
-    return FileResponse("./ind.html")
+    return FileResponse("./index.html")

@@ -92,6 +92,7 @@ class AsyncORM:
             select(UserORM).where(UserORM.user_name == username)
         )
         if not user:
+
             return None
         if not verify_password(password, user.password_hash):
             return None
@@ -101,6 +102,13 @@ class AsyncORM:
     async def get_user_by_id(session, user_id: int) -> UserORM | None:
         user = await session.scalar(
             select(UserORM).where(UserORM.user_id == user_id)
+        )
+        return user
+
+    @staticmethod
+    async def get_user_by_username(session, username: str) -> UserORM | None:
+        user = await session.scalar(
+            select(UserORM).where(UserORM.user_name == username)
         )
         return user
 
