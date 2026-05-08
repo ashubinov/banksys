@@ -49,3 +49,5 @@ async def delete_client(
     if not delete:
         raise HTTPException(status_code=404, detail="Client not found")
     return {"message": "deleted successfully"}
+
+

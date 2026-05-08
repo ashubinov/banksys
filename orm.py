@@ -114,6 +114,12 @@ class AsyncORM:
         return user
 
     @staticmethod
+    async def get_all_users(session):
+        query = (select(UserORM).order_by(UserORM.user_id))
+        result = await session.execute(query)
+        return result.scalars().all()
+
+    @staticmethod
     async def get_all_deposits(session):
         query = (select(DepositORM).order_by(DepositORM.deposit_id))
         result = await session.execute(query)

@@ -63,3 +63,8 @@ async def get_me(user=Depends(get_current_user)):
 async def logout(refresh_token: str):
     revoked_refresh_tokens.add(refresh_token)
     return {"message": "logout successful",}
+
+@router.get("/getusers", response_model=list[UserOutSchema])
+async def get_users_all(session: SessionDep):
+    users= await AsyncORM.get_all_users(session)
+    return users
