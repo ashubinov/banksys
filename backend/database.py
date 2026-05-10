@@ -1,5 +1,3 @@
-import os
-
 from fastapi import Depends
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker

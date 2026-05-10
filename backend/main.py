@@ -5,7 +5,8 @@ from starlette.responses import FileResponse
 from orm import AsyncORM
 from fastapi import FastAPI
 from database import session_factory
-from routers import client, account, deposit, auth
+from routers import auth, account, deposit, client
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,7 +22,3 @@ app.include_router(auth.router)
 app.include_router(client.router)
 app.include_router(deposit.router)
 app.include_router(account.router)
-
-@app.get("/")
-async def read_root():
-    return FileResponse("./inde.html")
