@@ -1,24 +1,40 @@
-from dotenv import load_dotenv
-load_dotenv()
 from contextlib import asynccontextmanager
-from starlette.responses import FileResponse
-from orm import AsyncORM
+
+import uvicorn
 from fastapi import FastAPI
-from database import session_factory
-from routers import auth, account, deposit, client
+from starlette.responses import FileResponse
+
+from backend.core.config import settings
+from backend.core.exceptions import register_exception_handlers
+from backend.core.models import db_helper
+from backend.routers import router as api_router
+from backend.services import SeedService
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await AsyncORM.create_tables()
-    await AsyncORM.insert_data()
-    async with session_factory() as session:
-        await AsyncORM.insert_admin_data(session)
+    # startup
+    async with db_helper.session_factory() as session:
+        await SeedService(session).run()
     yield
+    # shutdown
+    await db_helper.dispose()
+
 
 app = FastAPI(lifespan=lifespan)
+register_exception_handlers(app)
+app.include_router(api_router)
 
-app.include_router(auth.router)
-app.include_router(client.router)
-app.include_router(deposit.router)
-app.include_router(account.router)
+
+@app.get("/")
+async def root():
+    return FileResponse("index.html")
+
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "backend.main:app",
+        host=settings.run.host,
+        port=settings.run.port,
+        reload=True,
+    )

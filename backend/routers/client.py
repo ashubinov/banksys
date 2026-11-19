@@ -1,53 +1,48 @@
-from orm import AsyncORM
-from fastapi import APIRouter, Depends, HTTPException
-from schemas import ClientAddShema, ClientSchema, ClientPatchShema
-from database import SessionDep
-from models import UserRole
-from role import require_role
+from fastapi import APIRouter
 
-router =APIRouter(prefix="/client", tags=["client"])
+from backend.core.config import settings
+from backend.dependencies import ClientServiceDep, OperatorDep
+from backend.schemas import ClientAddShema, ClientPatchShema, ClientSchema
+
+router = APIRouter(prefix=settings.api.client, tags=["client"])
+
+
 @router.post("/new")
 async def create_client(
-        data: ClientAddShema,
-        session: SessionDep,
-        user = Depends(require_role(UserRole.bank_operator, UserRole.admin))
+    data: ClientAddShema,
+    service: ClientServiceDep,
+    user: OperatorDep,
 ):
-    await  AsyncORM.add_client(session, data)
+    await service.create(data)
     return {"message": "client created successfully"}
 
+
 @router.get("/{client_id}", response_model=ClientSchema)
-async def get_client_byid(client_id: int, session: SessionDep):
-    client = await AsyncORM.get_client_by_id(session, client_id)
-    if not client:
-        raise HTTPException(status_code=404, detail="Client not found")
-    return client
+async def get_client_byid(client_id: int, service: ClientServiceDep):
+    return await service.get(client_id)
+
 
 @router.get("/", response_model=list[ClientSchema])
-async def get_all_clients(session: SessionDep):
-    clients = await AsyncORM.get_all_client(session)
-    return clients
+async def get_all_clients(service: ClientServiceDep):
+    return await service.get_all()
+
 
 @router.patch("/{client_id}")
 async def update_client(
-        session: SessionDep,
-        client_id: int,
-        data: ClientPatchShema,
-        user = Depends(require_role(UserRole.bank_operator, UserRole.admin))
+    client_id: int,
+    data: ClientPatchShema,
+    service: ClientServiceDep,
+    user: OperatorDep,
 ):
-    up_client = await AsyncORM.update_client(session, client_id, data)
-    if not up_client:
-        raise HTTPException(status_code=404, detail="Client not found")
-    return {"ok": True, "client": up_client}
+    client = await service.update(client_id, data)
+    return {"ok": True, "client": client}
+
 
 @router.delete("/{client_id}")
 async def delete_client(
-        session: SessionDep,
-        client_id: int,
-        user = Depends(require_role(UserRole.bank_operator, UserRole.admin))
+    client_id: int,
+    service: ClientServiceDep,
+    user: OperatorDep,
 ):
-    delete = await AsyncORM.delete_client(session, client_id)
-    if not delete:
-        raise HTTPException(status_code=404, detail="Client not found")
+    await service.delete(client_id)
     return {"message": "deleted successfully"}
-
-

@@ -1,70 +1,48 @@
 from typing import Annotated
-from datetime import timedelta
-from auth_config import create_refresh_token, create_access_token
-from config import settings
-from role import get_current_user, require_role
-from orm import AsyncORM
-from fastapi import APIRouter, Depends, HTTPException, status
-from schemas import UserCreateSchema, UserOutSchema, Token
-from database import SessionDep
-from models import UserRole
+
+from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 
-revoked_refresh_tokens: set[str] = set()
+from backend.core.config import settings
+from backend.dependencies import (
+    AdminDep,
+    AuthServiceDep,
+    CurrentUserDep,
+    UserServiceDep,
+)
+from backend.schemas import Token, UserCreateSchema, UserOutSchema
 
-router =APIRouter(prefix="/oauth", tags=["auth"])
+router = APIRouter(prefix=settings.api.auth, tags=["auth"])
+
 
 @router.post("/token")
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    session: SessionDep,
+    auth_service: AuthServiceDep,
 ) -> Token:
-    user = await AsyncORM.authenticate_user(session, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    access_token = create_access_token(
-        data={"sub": user.user_name, "type": "access"},
-        expires_delta=timedelta(minutes=settings.access_token_expire_minutes)
-    )
-    refresh_token = create_refresh_token(
-        data={"sub": user.user_name},
-        expires_delta=timedelta(minutes=settings.refresh_token_expire_days)
-    )
-    return Token(access_token=access_token, token_type="bearer")
+    return await auth_service.login(form_data.username, form_data.password)
 
 
 @router.post("/register", response_model=UserOutSchema)
 async def get_register_user(
-        data: UserCreateSchema,
-        session: SessionDep,
-        admin = Depends(require_role(UserRole.admin)),
+    data: UserCreateSchema,
+    user_service: UserServiceDep,
+    admin: AdminDep,
 ):
-    user = await AsyncORM.create_user(session, data)
-    return {
-        "user_id": user.user_id,
-        "user_name": user.user_name,
-        "role": user.role
-    }
+    return await user_service.create_user(data)
 
-@router.get("/me")
-async def get_me(user=Depends(get_current_user)):
-    return {
-        "user_id": user.user_id,
-        "user_name": user.user_name,
-        "role": user.role
-    }
+
+@router.get("/me", response_model=UserOutSchema)
+async def get_me(user: CurrentUserDep):
+    return user
+
 
 @router.post("/logout")
-async def logout(refresh_token: str):
-    revoked_refresh_tokens.add(refresh_token)
-    return {"message": "logout successful",}
+async def logout(refresh_token: str, auth_service: AuthServiceDep):
+    auth_service.logout(refresh_token)
+    return {"message": "logout successful"}
+
 
 @router.get("/getusers", response_model=list[UserOutSchema])
-async def get_users_all(session: SessionDep):
-    users= await AsyncORM.get_all_users(session)
-    return users
+async def get_users_all(user_service: UserServiceDep):
+    return await user_service.get_all()
